@@ -1,0 +1,15 @@
+version: "3.9"
+services:
+  bingo-ticket-api:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: bingo-ticket-api
+    ports:
+      - "8080:8080"
+    networks:
+      - bingo-ticket-generator-network
+
+networks:
+  bingo-ticket-generator-network:
+    driver: bridge

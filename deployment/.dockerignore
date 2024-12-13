@@ -1,0 +1,19 @@
+# Ignore build directory and other generated files
+build/
+out/
+
+# Ignore IntelliJ IDEA project files
+.idea/
+*.iml
+
+# Ignore Gradle wrapper files (they are usually not needed inside the image)
+gradle/
+gradle-wrapper.jar
+gradle-wrapper.properties
+
+# Ignore local environment files
+*.env
+
+# Ignore any IDE-specific files
+.vscode/
+*.swp
