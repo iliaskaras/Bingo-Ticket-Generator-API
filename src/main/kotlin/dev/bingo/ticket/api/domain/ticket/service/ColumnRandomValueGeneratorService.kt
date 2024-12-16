@@ -28,6 +28,7 @@ class ColumnRandomValueGeneratorService {
          * The total number of numbers to allocate across all columns in a single Bingo ticket.
          */
         const val TOTAL_NUMBERS_TO_GENERATE = 15
+        const val TOTAL_TICKET_NUMBERS = 90
     }
 
     /**
@@ -150,7 +151,7 @@ class ColumnRandomValueGeneratorService {
             if (remainingAvailableNumbers <= 0) {
                 0
             } else {
-                (1..minOf(remainingAvailableNumbers, MAX_VALUES_PER_COLUMN)).random()
+                (MIN_VALUES_PER_COLUMN..minOf(remainingAvailableNumbers, MAX_VALUES_PER_COLUMN)).random()
             }
         }
     }
@@ -163,7 +164,7 @@ class ColumnRandomValueGeneratorService {
      */
     private fun isLastIteration(previouslyAllocatedNumbers: Map<Int, Set<Int>>): Boolean {
         val totalAllocatedNumbers = previouslyAllocatedNumbers.values.sumOf { it.size }
-        return (90 - totalAllocatedNumbers) <= TOTAL_NUMBERS_TO_GENERATE
+        return (TOTAL_TICKET_NUMBERS - totalAllocatedNumbers) <= TOTAL_NUMBERS_TO_GENERATE
     }
 
     /**
