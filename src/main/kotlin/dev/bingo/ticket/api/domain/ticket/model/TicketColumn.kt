@@ -7,3 +7,8 @@ data class TicketColumn(
 data class TicketColumns(
     val columns: List<TicketColumn>
 )
+
+data class ColumnAllocationTracker(
+    val allocations: IntArray = IntArray(9) { 0 },
+    val remainingNumbers: Array<MutableList<Int>>
+)

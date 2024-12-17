@@ -1,18 +1,20 @@
 package dev.bingo.ticket.api.domain.ticket.service
 
 import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
-import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
+import dev.bingo.ticket.api.domain.ticket.model.ColumnAllocationTracker
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumn
+import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumns
 import org.springframework.stereotype.Service
+import kotlin.random.Random
 
 /**
  * Service responsible for generating random column values for a Bingo ticket while ensuring adherence
  * to Bingo rules and preventing duplicate allocations within the same column across tickets.
  *
  * Key Rules:
- * - Each column must have between `MIN_VALUES_PER_COLUMN` and `MAX_VALUES_PER_COLUMN` numbers.
- * - Exactly `TOTAL_NUMBERS_TO_GENERATE` numbers are distributed across the ticket columns.
+ * - Each column must have between [MIN_VALUES_PER_COLUMN] and [MAX_VALUES_PER_COLUMN] numbers.
+ * - Exactly [TICKET_TOTAL_COLUMN_ALLOCATIONS] numbers are distributed across the ticket columns.
  * - Previously allocated numbers are excluded from future allocations in the same column.
  */
 @Service
@@ -20,190 +22,168 @@ class ColumnRandomValueGeneratorService {
 
     companion object {
         /**
-         * The minimum and maximum number of values a column can have.
+         * The minimum number of values a column can have.
          */
         const val MIN_VALUES_PER_COLUMN = 1
+
+        /**
+         * The maximum number of values a column can have.
+         */
         const val MAX_VALUES_PER_COLUMN = 3
 
         /**
-         * The total number of numbers to allocate across all columns in a single Bingo ticket.
+         * The total number of column allocations for a single Bingo ticket.
          */
-        const val TOTAL_NUMBERS_TO_GENERATE = 15
-        const val TOTAL_TICKET_NUMBERS = 90
+        const val TICKET_TOTAL_COLUMN_ALLOCATIONS = 15
     }
 
     /**
-     * Generates column values for a single Bingo ticket, ensuring no overlap with
-     * previously allocated numbers for the same column.
+     * Generates column values for a single Bingo ticket while ensuring that previously allocated numbers
+     * are not reused. Each column should receive a number of allocations between [MIN_VALUES_PER_COLUMN]
+     * and [MAX_VALUES_PER_COLUMN].
      *
-     * @param previouslyAllocatedNumbers A map where keys are column indices (0-8) and values
-     *        are sets of numbers already used in that column.
-     * @return A `TicketColumns` object containing the new ticket's column values.
+     * @param previouslyAllocatedNumbers An [AllocatedNumbers] object that holds the already
+     *        allocated numbers for each column, to avoid reallocation.
+     * @return A list of [TicketColumns] representing the generated Bingo tickets.
      */
     fun generateColumnValues(previouslyAllocatedNumbers: AllocatedNumbers): TicketColumns {
-        val allColumnRanges = TicketColumnEnum.allRanges()
+        val remainingNumbersPerColumn = getAvailableNumbersPool(previouslyAllocatedNumbers)
+        val columnAllocationTracker = ColumnAllocationTracker(
+            allocations = IntArray(9) { 0 },
+            remainingNumbers = remainingNumbersPerColumn
+        )
 
-        val columnAllocations = allocateNumbersAcrossColumns(previouslyAllocatedNumbers)
+        // List to hold the numbers for each column of the current ticket.
+        val ticketColumns = MutableList(9) { mutableListOf<Int>() }
 
-        val columns = allColumnRanges.mapIndexed { columnIndex, range ->
-            val availableNumbers = getAvailableForAllocationColumnNumbers(
-                range, previouslyAllocatedNumbers, columnIndex
-            )
-            val allocatedNumbers = allocateNumbersForColumn(availableNumbers, columnAllocations[columnIndex])
-            TicketColumn(allocatedNumbers)
+        repeat(TICKET_TOTAL_COLUMN_ALLOCATIONS) {
+            val column = selectColumn(columnAllocationTracker, remainingNumbersPerColumn)
+            allocateNumberToColumn(columnAllocationTracker, column, ticketColumns)
         }
 
-        return TicketColumns(columns)
+        return TicketColumns(ticketColumns.map { TicketColumn(it) })
     }
 
     /**
-     * Distributes numbers across columns, ensuring that each column adheres to constraints.
+     * Allocates a number to the specified column in the ticket, ensuring the number is removed from
+     * the pool of available numbers for that column and updating the column's allocation count.
      *
-     * Handles the final ticket allocation differently to ensure exact compliance with
-     * the total number of required numbers.
-     *
-     * @param previouslyAllocatedNumbers Map of column indices to their allocated numbers.
-     * @return List of numbers to allocate per column.
+     * @param tracker A [ColumnAllocationTracker] object that holds allocation counts and remaining numbers.
+     * @param column The index of the column (0 to 8) to which the number will be allocated.
+     * @param ticketColumns A list of lists representing the ticket's columns and their allocated numbers.
+     * @throws IllegalStateException If there are no remaining numbers in the selected column.
+     * @throws IllegalArgumentException If the column index is invalid.
      */
-    private fun allocateNumbersAcrossColumns(previouslyAllocatedNumbers: AllocatedNumbers): List<Int> {
-        val columnCount = TicketColumnEnum.entries.size
-        val isLastTicketGeneration = isLastIteration(previouslyAllocatedNumbers)
+    private fun allocateNumberToColumn(
+        tracker: ColumnAllocationTracker,
+        column: Int,
+        ticketColumns: MutableList<MutableList<Int>>,
+    ) {
+        require(column in 0..8) { "Invalid column index: $column. Must be between 0 and 8." }
 
-        val columnAllocations = if (isLastTicketGeneration) {
-            allocateForLastTicket(previouslyAllocatedNumbers)
+        if (tracker.remainingNumbers[column].isNotEmpty()) {
+            val randomIndex = Random.nextInt(tracker.remainingNumbers[column].size)
+            val number = tracker.remainingNumbers[column].removeAt(randomIndex)
+
+            ticketColumns[column].add(number)
+            tracker.allocations[column]++
         } else {
-            initializeColumnAllocations(columnCount, previouslyAllocatedNumbers)
-        }.toMutableList()
-
-        var remainingNumbersToAllocate = TOTAL_NUMBERS_TO_GENERATE - columnAllocations.sum()
-
-        while (remainingNumbersToAllocate > 0) {
-            val columnIndex = (0 until columnCount).random()
-            val columnRange = TicketColumnEnum.entries[columnIndex].valuesRange
-
-            val availableNumbers = getAvailableForAllocationColumnNumbers(columnRange, previouslyAllocatedNumbers, columnIndex)
-
-            if (canAllocateToColumn(columnAllocations, columnIndex, availableNumbers.size)) {
-                columnAllocations[columnIndex]++
-                remainingNumbersToAllocate--
-            }
-        }
-
-        return columnAllocations
-    }
-
-    /**
-     * Allocates numbers specifically for the last ticket, ensuring fair distribution
-     * while adhering to constraints.
-     */
-    private fun allocateForLastTicket(previouslyAllocatedNumbers: AllocatedNumbers): List<Int> {
-        val remainingNumbersToAllocate = TOTAL_NUMBERS_TO_GENERATE
-        val remainingAvailableNumbersPerColumn = TicketColumnEnum.entries.mapIndexed { index, column ->
-            val alreadyAllocatedCount = previouslyAllocatedNumbers.getAllocatedCountForColumn(index)
-            column.valuesRange.count() - alreadyAllocatedCount
-        }
-
-        return remainingAvailableNumbersPerColumn.map { availableNumbers ->
-            minOf(availableNumbers, MAX_VALUES_PER_COLUMN)
-        }.let { allocations ->
-            val totalAllocated = allocations.sum()
-            if (totalAllocated < remainingNumbersToAllocate) {
-                distributeRemainingNumbers(allocations, remainingNumbersToAllocate - totalAllocated)
-            } else {
-                allocations
-            }
+            throw IllegalStateException("No remaining numbers in column $column to allocate.")
         }
     }
 
     /**
-     * Distributes any remaining numbers fairly across columns, respecting the maximum constraint.
-     */
-    private fun distributeRemainingNumbers(allocations: List<Int>, remaining: Int): List<Int> {
-        val mutableAllocations = allocations.toMutableList()
-        var remainingNumbers = remaining
-
-        while (remainingNumbers > 0) {
-            for (i in mutableAllocations.indices) {
-                if (mutableAllocations[i] < MAX_VALUES_PER_COLUMN && remainingNumbers > 0) {
-                    mutableAllocations[i]++
-                    remainingNumbers--
-                }
-            }
-        }
-
-        return mutableAllocations
-    }
-
-    /**
-     * Initializes column allocations by assigning initial values based on the number of available numbers.
+     * Initializes the pool of numbers available for allocation for each column, based on the ranges
+     * defined in [TicketColumnEnum], and removes any numbers that were previously allocated.
      *
-     * @param columnCount Total number of columns.
-     * @param previouslyAllocatedNumbers Map of column indices to their allocated numbers.
-     * @return List of initial allocations per column.
+     * @param previouslyAllocatedNumbers An [AllocatedNumbers] object containing numbers already allocated.
+     * @return An array of mutable lists, where each list contains the numbers available for each column.
      */
-    private fun initializeColumnAllocations(
-        columnCount: Int,
+    private fun getAvailableNumbersPool(previouslyAllocatedNumbers: AllocatedNumbers): Array<MutableList<Int>> {
+        val columnRanges = TicketColumnEnum.allRanges()
+        val initialPool = initializeFullPool(columnRanges)
+        return removePreviouslyAllocatedNumbers(initialPool, previouslyAllocatedNumbers)
+    }
+
+    /**
+     * Creates a pool of all possible numbers for each column based on their defined ranges.
+     *
+     * @param columnRanges A list of [IntRange] objects representing the range of numbers for each column.
+     * @return An array of mutable lists, where each list contains all possible numbers for a column.
+     */
+    private fun initializeFullPool(columnRanges: List<IntRange>): Array<MutableList<Int>> =
+        Array(9) { index -> columnRanges[index].toMutableList() }
+
+    /**
+     * Removes numbers that were previously allocated from the pool of available numbers for each column.
+     *
+     * @param pool The initial pool of numbers for each column.
+     * @param previouslyAllocatedNumbers An [AllocatedNumbers] object containing numbers already allocated.
+     * @return The updated pool with previously allocated numbers removed.
+     */
+    private fun removePreviouslyAllocatedNumbers(
+        pool: Array<MutableList<Int>>,
         previouslyAllocatedNumbers: AllocatedNumbers
-    ): MutableList<Int> {
-        return MutableList(columnCount) { columnIndex ->
-            val columnRange = TicketColumnEnum.entries[columnIndex].valuesRange
-            val totalPreviouslyAllocatedNumbers = previouslyAllocatedNumbers.getAllocatedCountForColumn(columnIndex)
-            val remainingAvailableNumbers = columnRange.count() - totalPreviouslyAllocatedNumbers
-
-            if (remainingAvailableNumbers <= 0) {
-                0
-            } else {
-                (MIN_VALUES_PER_COLUMN..minOf(remainingAvailableNumbers, MAX_VALUES_PER_COLUMN)).random()
+    ): Array<MutableList<Int>> {
+        previouslyAllocatedNumbers.columnNumbers.forEach { column ->
+            column.allocatedNumbers.forEach { number ->
+                pool[column.columnIndex].remove(number)
             }
         }
+        return pool
     }
 
     /**
-     * Checks if the current allocation is for the last ticket generation.
+     * Selects a column to allocate a number from, based on the number of values already allocated
+     * to each column and the availability of remaining numbers.
      *
-     * @param previouslyAllocatedNumbers Map of column indices to their allocated numbers.
-     * @return True if this is the last ticket to be generated, false otherwise.
+     * @param tracker A [ColumnAllocationTracker] object tracking allocations and remaining numbers.
+     * @param remainingNumbersPerColumn An array of lists representing the available numbers for each column.
+     * @return The index of the selected column (0-8).
+     * @throws IllegalStateException If no columns have numbers left for allocation.
      */
-    private fun isLastIteration(previouslyAllocatedNumbers: AllocatedNumbers): Boolean {
-        val totalAllocatedNumbers = previouslyAllocatedNumbers.getTotalAllocatedNumbers()
-        return (TOTAL_TICKET_NUMBERS - totalAllocatedNumbers) <= TOTAL_NUMBERS_TO_GENERATE
-    }
+    private fun selectColumn(
+        tracker: ColumnAllocationTracker,
+        remainingNumbersPerColumn: Array<MutableList<Int>>
+    ): Int {
+        val underpopulatedColumns = getUnderpopulatedColumns(tracker.allocations)
+        val columnsWithRemainingNumbers = filterColumnsWithRemainingNumbers(underpopulatedColumns, remainingNumbersPerColumn)
 
-    /**
-     * Verifies if more numbers can be allocated to a specific column.
-     */
-    private fun canAllocateToColumn(
-        columnAllocations: List<Int>,
-        columnIndex: Int,
-        availableNumbersSize: Int
-    ): Boolean {
-        val currentAllocation = columnAllocations[columnIndex]
-        return currentAllocation < MAX_VALUES_PER_COLUMN && availableNumbersSize > 0
-    }
-
-    /**
-     * Filters out numbers that have already been allocated from the range of available numbers for a column.
-     */
-    private fun getAvailableForAllocationColumnNumbers(
-        columnRange: IntRange,
-        previouslyAllocatedNumbers: AllocatedNumbers,
-        columnIndex: Int
-    ): List<Int> = columnRange.filterNot { number ->
-            previouslyAllocatedNumbers.isNumberAlreadyAllocated(columnIndex, number)
+        // If there are available columns with numbers remaining, select one randomly.
+        if (columnsWithRemainingNumbers.isNotEmpty()) {
+            return columnsWithRemainingNumbers.random()
         }
 
-    /**
-     * Randomly selects the specified number of values from the available numbers for a column.
-     *
-     * @param availableNumbers List of numbers available for allocation.
-     * @param count Number of values to allocate.
-     * @throws IllegalStateException If there are not enough available numbers to meet the allocation.
-     * @return List of allocated numbers.
-     */
-    private fun allocateNumbersForColumn(availableNumbers: List<Int>, count: Int): List<Int> {
-        if (availableNumbers.size < count) {
-            throw IllegalStateException("Not enough numbers available for column to allocate $count values.")
+        // If no available columns are found, try to select from columns with any remaining numbers.
+        val columnsWithRemaining = (0..8).filter { remainingNumbersPerColumn[it].isNotEmpty() }
+        if (columnsWithRemaining.isNotEmpty()) {
+            return columnsWithRemaining.random()
         }
-        return availableNumbers.shuffled().take(count)
+
+        throw IllegalStateException("No available columns left to allocate numbers.")
+    }
+
+    /**
+     * Filters columns to include only those with remaining numbers.
+     *
+     * @param columnIndexes A list of column indexes to check.
+     * @param remainingNumbersPerColumn An array of lists representing the available numbers for each column.
+     * @return A list of column indexes with remaining numbers.
+     */
+    private fun filterColumnsWithRemainingNumbers(
+        columnIndexes: List<Int>,
+        remainingNumbersPerColumn: Array<MutableList<Int>>
+    ) = columnIndexes.filter { remainingNumbersPerColumn[it].isNotEmpty() }
+
+    /**
+     * Identifies columns that are underpopulated based on their current allocation counts.
+     *
+     * @param ticketColumnCounts An array tracking the current allocation counts for each column.
+     * @return A list of column indexes (0-8) that are underpopulated.
+     */
+    private fun getUnderpopulatedColumns(
+        ticketColumnCounts: IntArray
+    ) = (0..8).filter {
+        ticketColumnCounts[it] < MAX_VALUES_PER_COLUMN
     }
 }
