@@ -2,11 +2,13 @@ package dev.bingo.ticket.api.domain.ticket.service
 
 import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.ticket.model.*
+import dev.bingo.ticket.api.domain.validation.validator.TicketColumnsValidator
 import org.springframework.stereotype.Service
 
 @Service
 class TicketGeneratorService(
-    private val columnRandomValueGeneratorService: ColumnRandomValueGeneratorService
+    private val columnRandomValueGeneratorService: ColumnRandomValueGeneratorService,
+    private val ticketColumnsValidator: TicketColumnsValidator
 ) {
 
     /**
@@ -20,51 +22,9 @@ class TicketGeneratorService(
     fun generateTicket(previouslyAllocatedNumbers: AllocatedNumbers): Ticket {
         val ticketColumns = columnRandomValueGeneratorService.generateColumnValues(previouslyAllocatedNumbers)
 
-        validateNewColumnNumbers(previouslyAllocatedNumbers, ticketColumns)
+        ticketColumnsValidator.invoke(previouslyAllocatedNumbers, ticketColumns)
 
         return Ticket(createTicketRows(ticketColumns))
-    }
-
-    /**
-     * Validates the newly generated column numbers to ensure they follow Bingo rules.
-     *
-     * @param previouslyAllocatedNumbers Previously allocated numbers by column index.
-     * @param ticketColumns The newly generated ticket columns.
-     */
-    private fun validateNewColumnNumbers(previouslyAllocatedNumbers: AllocatedNumbers, ticketColumns: TicketColumns) {
-        val allGeneratedNumbers = ticketColumns.columns.flatMap { it.numbers }
-
-        newColumnNumbersSizeValidation(allGeneratedNumbers)
-        newColumnNumbersOverlapWithPreviousValidation(previouslyAllocatedNumbers, allGeneratedNumbers)
-    }
-
-    /**
-     * Ensures exactly 15 new numbers are generated.
-     *
-     * @param allGeneratedNumbers A flat list of all numbers generated across columns.
-     */
-    private fun newColumnNumbersSizeValidation(allGeneratedNumbers: List<Int>) {
-        if (allGeneratedNumbers.size != 15) {
-            throw IllegalStateException("Invalid number of generated numbers. Expected 15, but found ${allGeneratedNumbers.size}.")
-        }
-    }
-
-    /**
-     * Ensures the newly generated numbers do not overlap with previously allocated numbers.
-     *
-     * @param previouslyAllocatedNumbers Previously allocated numbers by column index.
-     * @param allGeneratedNumbers A flat list of all numbers generated across columns.
-     */
-    private fun newColumnNumbersOverlapWithPreviousValidation(
-        previouslyAllocatedNumbers: AllocatedNumbers,
-        allGeneratedNumbers: List<Int>
-    ) {
-        val previouslyAllocated = previouslyAllocatedNumbers.getAllAllocatedNumbers()
-        val overlap = allGeneratedNumbers.toSet().intersect(previouslyAllocated)
-
-        if (overlap.isNotEmpty()) {
-            throw IllegalStateException("The generated numbers overlap with previously allocated numbers: $overlap")
-        }
     }
 
     /**
