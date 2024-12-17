@@ -14,14 +14,14 @@ class TicketGeneratorService(
      *
      * @param previouslyAllocatedNumbers A map of column indices (0-8) to sets of numbers
      *        that have already been allocated in those columns.
-     * @return A list of TicketRows adhering to Bingo rules.
+     * @return A Ticket with TicketRows adhering to Bingo rules.
      */
-    fun generateTicket(previouslyAllocatedNumbers: Map<Int, Set<Int>>): List<TicketRow> {
+    fun generateTicket(previouslyAllocatedNumbers: Map<Int, Set<Int>>): Ticket {
         val ticketColumns = columnRandomValueGeneratorService.generateColumnValues(previouslyAllocatedNumbers)
 
         validateNewColumnNumbers(previouslyAllocatedNumbers, ticketColumns)
 
-        return createTicketRows(ticketColumns)
+        return Ticket(createTicketRows(ticketColumns))
     }
 
     /**
