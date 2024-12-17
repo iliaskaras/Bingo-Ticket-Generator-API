@@ -1,5 +1,6 @@
 package dev.bingo.ticket.api.domain.ticket.service
 
+import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumn
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumns
@@ -13,17 +14,24 @@ class TicketGeneratorServiceSpec extends Specification {
 
     def "should generate a valid Bingo ticket with 15 new numbers"() {
         given: "A map of previously allocated numbers for each column"
-            def previouslyAllocatedNumbers = [
-                    0: [1, 2, 3] as Set,    // Column 0 has 3 numbers already
-                    1: [11, 12] as Set,     // Column 1 has 2 numbers already
-                    2: [21] as Set,         // Column 2 has 1 number already
-                    3: [31, 32] as Set,     // Column 3 has 2 numbers already
-                    4: [41, 42] as Set,     // Column 4 has 2 numbers already
-                    5: [50] as Set,         // Column 5 has 1 number already
-                    6: [60] as Set,         // Column 6 has 1 number already
-                    7: [70] as Set,         // Column 7 has 1 number already
-                    8: [80, 81] as Set      // Column 8 has 2 numbers already
-            ]
+            def previouslyAllocatedNumbers = new AllocatedNumbers()
+
+            // Adding previously allocated numbers to columns
+            previouslyAllocatedNumbers.addNumberToColumn(0, 1)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 2)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 3)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 11)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 12)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 21)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 31)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 32)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 41)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 42)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 50)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 60)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 70)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 80)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 81)
 
         and: "The columnRandomValueGeneratorService is mocked to return a valid ticket"
             // Mocking the service to return a generated TicketColumns with exactly 15 new numbers
@@ -86,7 +94,7 @@ class TicketGeneratorServiceSpec extends Specification {
             columnRandomValueGeneratorService.generateColumnValues(_) >> invalidTicketColumns
 
         when: "Generating a ticket"
-            ticketGeneratorService.generateTicket([:])
+            ticketGeneratorService.generateTicket(new AllocatedNumbers())
 
         then: "An exception is thrown due to incorrect number of generated numbers"
             def e = thrown(IllegalStateException)
@@ -94,11 +102,17 @@ class TicketGeneratorServiceSpec extends Specification {
     }
 
     def "should throw exception when generated numbers overlap with previously allocated numbers"() {
-        given: "A map of previously allocated numbers and overlapping generated numbers"
-            def previouslyAllocatedNumbers = [
-                    0: [1, 2, 3] as Set,  // Column 0 has 3 numbers already
-                    1: [10, 11] as Set    // Column 1 has 2 numbers already
-            ]
+        given: "An AllocatedNumbers model with previously allocated numbers and overlapping generated numbers"
+            def previouslyAllocatedNumbers = new AllocatedNumbers()
+
+            // Adding previously allocated numbers to columns
+            previouslyAllocatedNumbers.addNumberToColumn(0, 1)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 2)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 3)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 10)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 11)
+
+        and: "Overlapping generated ticket columns"
             def overlappingTicketColumns = new TicketColumns([
                     new TicketColumn([4, 5, 1]),     // Overlaps with 1 in Column 0
                     new TicketColumn([12, 13, 10]),  // Overlaps with 10 in Column 1
