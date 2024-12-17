@@ -1,5 +1,6 @@
 package dev.bingo.ticket.api.domain.ticket.service
 
+import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.ticket.model.*
 import org.springframework.stereotype.Service
 
@@ -16,7 +17,7 @@ class TicketGeneratorService(
      *        that have already been allocated in those columns.
      * @return A Ticket with TicketRows adhering to Bingo rules.
      */
-    fun generateTicket(previouslyAllocatedNumbers: Map<Int, Set<Int>>): Ticket {
+    fun generateTicket(previouslyAllocatedNumbers: AllocatedNumbers): Ticket {
         val ticketColumns = columnRandomValueGeneratorService.generateColumnValues(previouslyAllocatedNumbers)
 
         validateNewColumnNumbers(previouslyAllocatedNumbers, ticketColumns)
@@ -30,7 +31,7 @@ class TicketGeneratorService(
      * @param previouslyAllocatedNumbers Previously allocated numbers by column index.
      * @param ticketColumns The newly generated ticket columns.
      */
-    private fun validateNewColumnNumbers(previouslyAllocatedNumbers: Map<Int, Set<Int>>, ticketColumns: TicketColumns) {
+    private fun validateNewColumnNumbers(previouslyAllocatedNumbers: AllocatedNumbers, ticketColumns: TicketColumns) {
         val allGeneratedNumbers = ticketColumns.columns.flatMap { it.numbers }
 
         newColumnNumbersSizeValidation(allGeneratedNumbers)
@@ -55,10 +56,10 @@ class TicketGeneratorService(
      * @param allGeneratedNumbers A flat list of all numbers generated across columns.
      */
     private fun newColumnNumbersOverlapWithPreviousValidation(
-        previouslyAllocatedNumbers: Map<Int, Set<Int>>,
+        previouslyAllocatedNumbers: AllocatedNumbers,
         allGeneratedNumbers: List<Int>
     ) {
-        val previouslyAllocated = previouslyAllocatedNumbers.values.flatten().toSet()
+        val previouslyAllocated = previouslyAllocatedNumbers.getAllAllocatedNumbers()
         val overlap = allGeneratedNumbers.toSet().intersect(previouslyAllocated)
 
         if (overlap.isNotEmpty()) {

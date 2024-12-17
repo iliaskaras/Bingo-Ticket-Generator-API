@@ -1,5 +1,6 @@
 package dev.bingo.ticket.api.domain.ticket.service
 
+import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
 import dev.bingo.ticket.api.domain.ticket.model.TicketRowCell
 import spock.lang.Specification
@@ -22,7 +23,7 @@ class ColumnRandomValueGeneratorServiceSpec extends Specification {
 
         when: "The generate method is called"
             while (seenNumbers.size() < allNumbers.size() && tryCount < maxTries) {
-                def ticketColumns = columnRandomValueGeneratorService.generateColumnValues(Map.of())
+                def ticketColumns = columnRandomValueGeneratorService.generateColumnValues(new AllocatedNumbers())
                 tryCount++
 
                 // Add generated numbers to the set of seen numbers
@@ -44,38 +45,111 @@ class ColumnRandomValueGeneratorServiceSpec extends Specification {
 
     def "when generate is called, the generated numbers should match the remaining unallocated numbers"() {
         given: "A map of previously allocated numbers"
-            def previouslyAllocatedNumbers = [
-                    0: [1, 2, 3, 4, 5, 6, 7, 8] as Set, // 9 is not allocated
-                    1: [10, 14, 15, 16, 17, 18, 19] as Set, // 11, 12, 13 are not allocated
-                    2: [22, 23, 24, 25, 26, 27, 28, 29] as Set, // 20, 21 are not allocated
-                    3: [30, 31, 32, 33, 34, 35, 36, 37, 38, 39] as Set, // all are allocated
-                    4: [40, 41, 42, 43, 44, 48, 49] as Set, // 45, 46, 47 are not allocated
-                    5: [50, 51, 52, 53, 54, 55, 56, 57] as Set, // 58, 59 are not allocated
-                    6: [61, 62, 63, 64, 65, 66, 67, 68, 69] as Set, // 60 is not allocated
-                    7: [71, 72, 73, 74, 75, 76, 77, 78, 79] as Set, // 70 is not allocated
-                    8: [81, 82, 83, 84, 85, 86, 87, 88, 89] as Set // 80, 90 are not allocated
-            ]
+            def previouslyAllocatedNumbers = new AllocatedNumbers()
+            previouslyAllocatedNumbers.addNumberToColumn(0, 1)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 2)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 3)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 4)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 5)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 6)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 7)
+            previouslyAllocatedNumbers.addNumberToColumn(0, 8)
+
+            previouslyAllocatedNumbers.addNumberToColumn(1, 10)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 14)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 15)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 16)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 17)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 18)
+            previouslyAllocatedNumbers.addNumberToColumn(1, 19)
+
+            previouslyAllocatedNumbers.addNumberToColumn(2, 22)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 23)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 24)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 25)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 26)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 27)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 28)
+            previouslyAllocatedNumbers.addNumberToColumn(2, 29)
+
+            previouslyAllocatedNumbers.addNumberToColumn(3, 30)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 31)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 32)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 33)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 34)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 35)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 36)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 37)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 38)
+            previouslyAllocatedNumbers.addNumberToColumn(3, 39)
+
+            previouslyAllocatedNumbers.addNumberToColumn(4, 40)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 41)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 42)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 43)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 44)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 48)
+            previouslyAllocatedNumbers.addNumberToColumn(4, 49)
+
+            previouslyAllocatedNumbers.addNumberToColumn(5, 50)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 51)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 52)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 53)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 54)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 55)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 56)
+            previouslyAllocatedNumbers.addNumberToColumn(5, 57)
+
+            previouslyAllocatedNumbers.addNumberToColumn(6, 61)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 62)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 63)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 64)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 65)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 66)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 67)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 68)
+            previouslyAllocatedNumbers.addNumberToColumn(6, 69)
+
+            previouslyAllocatedNumbers.addNumberToColumn(7, 71)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 72)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 73)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 74)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 75)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 76)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 77)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 78)
+            previouslyAllocatedNumbers.addNumberToColumn(7, 79)
+
+            previouslyAllocatedNumbers.addNumberToColumn(8, 81)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 82)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 83)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 84)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 85)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 86)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 87)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 88)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 89)
 
         and: "Expected TicketRow objects based on the remaining unallocated numbers"
             def expectedTicketRows = [
-                    // Column 0 has number 9
-                    [new TicketRowCell.NumberRowCell(9), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
-                    // Column 1 has numbers 11, 12, 13
-                    [new TicketRowCell.NumberRowCell(11), new TicketRowCell.NumberRowCell(12), new TicketRowCell.NumberRowCell(13)],
-                    // Column 2 has numbers 20, 21
-                    [new TicketRowCell.NumberRowCell(20), new TicketRowCell.NumberRowCell(21), TicketRowCell.BlankRowCell],
-                    // Column 3 has no numbers
-                    [TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
-                    // Column 4 has numbers 45, 46, 47
-                    [new TicketRowCell.NumberRowCell(45), new TicketRowCell.NumberRowCell(46), new TicketRowCell.NumberRowCell(47)],
-                    // Column 5 has numbers 58, 59
-                    [new TicketRowCell.NumberRowCell(58), new TicketRowCell.NumberRowCell(59), TicketRowCell.BlankRowCell],
-                    // Column 6 has number 60
-                    [new TicketRowCell.NumberRowCell(60), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
-                    // Column 7 has number 70
-                    [new TicketRowCell.NumberRowCell(70), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
-                    // Column 8 has numbers 80, 90
-                    [new TicketRowCell.NumberRowCell(80), new TicketRowCell.NumberRowCell(90), TicketRowCell.BlankRowCell]
+                // Column 0 has number 9
+                [new TicketRowCell.NumberRowCell(9), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
+                // Column 1 has numbers 11, 12, 13
+                [new TicketRowCell.NumberRowCell(11), new TicketRowCell.NumberRowCell(12), new TicketRowCell.NumberRowCell(13)],
+                // Column 2 has numbers 20, 21
+                [new TicketRowCell.NumberRowCell(20), new TicketRowCell.NumberRowCell(21), TicketRowCell.BlankRowCell],
+                // Column 3 has no numbers
+                [TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
+                // Column 4 has numbers 45, 46, 47
+                [new TicketRowCell.NumberRowCell(45), new TicketRowCell.NumberRowCell(46), new TicketRowCell.NumberRowCell(47)],
+                // Column 5 has numbers 58, 59
+                [new TicketRowCell.NumberRowCell(58), new TicketRowCell.NumberRowCell(59), TicketRowCell.BlankRowCell],
+                // Column 6 has number 60
+                [new TicketRowCell.NumberRowCell(60), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
+                // Column 7 has number 70
+                [new TicketRowCell.NumberRowCell(70), TicketRowCell.BlankRowCell, TicketRowCell.BlankRowCell],
+                // Column 8 has numbers 80, 90
+                [new TicketRowCell.NumberRowCell(80), new TicketRowCell.NumberRowCell(90), TicketRowCell.BlankRowCell]
             ]
 
         when: "The generate method is called with previously allocated numbers"
@@ -91,17 +165,28 @@ class ColumnRandomValueGeneratorServiceSpec extends Specification {
 
     def "should throw IllegalStateException when there aren't enough numbers available for allocation"() {
         given: "A map of previously allocated numbers that makes one column unavailable"
-            def previouslyAllocatedNumbers = [
-                    0: (1..9).toSet(),   // Column 0 is fully allocated (1-9)
-                    1: (10..19).toSet(), // Column 1 is fully allocated (10-19)
-                    2: (20..29).toSet(), // Column 2 is fully allocated (20-29)
-                    3: (30..39).toSet(), // Column 3 is fully allocated (30-39)
-                    4: (40..49).toSet(), // Column 4 is fully allocated (40-49)
-                    5: (50..59).toSet(), // Column 5 is fully allocated (50-59)
-                    6: (60..69).toSet(), // Column 6 is fully allocated (60-69)
-                    7: (70..79).toSet(), // Column 7 is fully allocated (70-79)
-                    8: (80..88).toSet()  // Column 8 has only one number left available (89)
-            ]
+            def previouslyAllocatedNumbers = new AllocatedNumbers()
+
+            // Fully allocate columns
+            (1..9).each { previouslyAllocatedNumbers.addNumberToColumn(0, it) }
+            (10..19).each { previouslyAllocatedNumbers.addNumberToColumn(1, it) }
+            (20..29).each { previouslyAllocatedNumbers.addNumberToColumn(2, it) }
+            (30..39).each { previouslyAllocatedNumbers.addNumberToColumn(3, it) }
+            (40..49).each { previouslyAllocatedNumbers.addNumberToColumn(4, it) }
+            (50..59).each { previouslyAllocatedNumbers.addNumberToColumn(5, it) }
+            (60..69).each { previouslyAllocatedNumbers.addNumberToColumn(6, it) }
+            (70..79).each { previouslyAllocatedNumbers.addNumberToColumn(7, it) }
+
+            // Column 8 has only one number left (89)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 80)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 81)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 82)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 83)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 84)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 85)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 86)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 87)
+            previouslyAllocatedNumbers.addNumberToColumn(8, 88)
 
         when: "We attempt to generate column values for a new ticket"
             columnRandomValueGeneratorService.generateColumnValues(previouslyAllocatedNumbers)

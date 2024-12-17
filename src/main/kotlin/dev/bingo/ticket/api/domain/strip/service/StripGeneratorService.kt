@@ -1,5 +1,6 @@
 package dev.bingo.ticket.api.domain.strip.service
 
+import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.strip.model.Strip
 import dev.bingo.ticket.api.domain.ticket.model.Ticket
 import dev.bingo.ticket.api.domain.ticket.model.TicketRowCell
@@ -18,7 +19,7 @@ class StripGeneratorService(
      */
     fun generateStrip(): Strip {
         val tickets = mutableListOf<Ticket>()
-        var previouslyAllocatedNumbers = initializePreviouslyAllocatedNumbers()
+        var previouslyAllocatedNumbers = AllocatedNumbers()
 
         repeat(6) {
             val ticket = ticketGeneratorService.generateTicket(previouslyAllocatedNumbers)
@@ -43,26 +44,22 @@ class StripGeneratorService(
     /**
      * Updates the previously allocated numbers by adding the new numbers generated in the current ticket.
      *
-     * @param previouslyAllocatedNumbers The existing map of previously allocated numbers by column index.
+     * @param previouslyAllocatedNumbers The existing `AllocatedNumbers` containing allocated numbers by column index.
      * @param ticket The current ticket, used to extract newly generated numbers.
-     * @return An updated map of previously allocated numbers by column index.
+     * @return An updated `AllocatedNumbers` object with the new allocated numbers.
      */
     private fun updatePreviouslyAllocatedNumbers(
-        previouslyAllocatedNumbers: Map<Int, Set<Int>>,
+        previouslyAllocatedNumbers: AllocatedNumbers,
         ticket: Ticket
-    ): Map<Int, Set<Int>> {
-        val updatedNumbers: MutableMap<Int, MutableSet<Int>> = previouslyAllocatedNumbers
-            .mapValues { it.value.toMutableSet() }
-            .toMutableMap()
-
+    ): AllocatedNumbers {
         ticket.rows.forEach { row ->
             row.cells.forEachIndexed { columnIndex, cell ->
                 if (cell is TicketRowCell.NumberRowCell) {
-                    updatedNumbers.computeIfAbsent(columnIndex) { mutableSetOf() }.add(cell.number)
+                    previouslyAllocatedNumbers.addNumberToColumn(columnIndex, cell.number)
                 }
             }
         }
 
-        return updatedNumbers
+        return previouslyAllocatedNumbers
     }
 }
