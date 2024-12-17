@@ -41,27 +41,27 @@ class TicketGeneratorServiceSpec extends Specification {
             columnRandomValueGeneratorService.generateColumnValues(_) >> new TicketColumns(generatedTicketColumns)
 
         when: "We generate a new Bingo ticket"
-            def ticketRows = ticketGeneratorService.generateTicket(previouslyAllocatedNumbers)
+            def ticket = ticketGeneratorService.generateTicket(previouslyAllocatedNumbers)
 
         then: "The generated rows should contain exactly 5 numbers each"
-            ticketRows.each { row ->
+            ticket.rows .each { row ->
                 row.cells.count { it instanceof TicketRowCell.NumberRowCell } == 5
             }
 
         and: "The generated rows should contain exactly 4 blanks each"
-            ticketRows.each { row ->
+            ticket.rows.each { row ->
                 row.cells.count { it instanceof TicketRowCell.BlankRowCell } == 4
             }
 
         and: "Each column in the ticket should contain numbers within the correct range for its index"
             (0..8).collect { columnIndex ->
-                def columnValues = extractColumnValues(ticketRows, columnIndex)
+                def columnValues = extractColumnValues(ticket.rows, columnIndex)
                 def columnValidValues = TicketColumnEnum.getByIndex(columnIndex)
                 assert columnValidValues.valuesRange.toList().containsAll(columnValues)
             }
 
         and: "No number should appear in more than one column"
-            def allNumbers = ticketRows
+            def allNumbers = ticket.rows
                     .collectMany { row ->
                         row.cells.findAll { it instanceof TicketRowCell.NumberRowCell }
                     }
@@ -69,7 +69,7 @@ class TicketGeneratorServiceSpec extends Specification {
             assert allNumbers.toSet().size() == 15
 
         and: "The ticket contain correct number of blanks"
-            def allBlanks = ticketRows
+            def allBlanks = ticket.rows
                     .collectMany { row ->
                         row.cells.findAll { it instanceof TicketRowCell.BlankRowCell }
                     }
@@ -100,7 +100,7 @@ class TicketGeneratorServiceSpec extends Specification {
                     1: [10, 11] as Set    // Column 1 has 2 numbers already
             ]
             def overlappingTicketColumns = new TicketColumns([
-                    new TicketColumn([4, 5, 1]),      // Overlaps with 1 in Column 0
+                    new TicketColumn([4, 5, 1]),     // Overlaps with 1 in Column 0
                     new TicketColumn([12, 13, 10]),  // Overlaps with 10 in Column 1
                     new TicketColumn([20, 21, 22]),  // No overlap here
                     new TicketColumn([30, 31, 32]),  // No overlap here
