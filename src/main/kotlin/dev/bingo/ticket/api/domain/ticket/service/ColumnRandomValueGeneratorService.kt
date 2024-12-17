@@ -1,5 +1,6 @@
 package dev.bingo.ticket.api.domain.ticket.service
 
+import dev.bingo.ticket.api.domain.strip.model.AllocatedNumbers
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumn
 import dev.bingo.ticket.api.domain.ticket.model.TicketColumns
@@ -39,7 +40,7 @@ class ColumnRandomValueGeneratorService {
      *        are sets of numbers already used in that column.
      * @return A `TicketColumns` object containing the new ticket's column values.
      */
-    fun generateColumnValues(previouslyAllocatedNumbers: Map<Int, Set<Int>>): TicketColumns {
+    fun generateColumnValues(previouslyAllocatedNumbers: AllocatedNumbers): TicketColumns {
         val allColumnRanges = TicketColumnEnum.allRanges()
 
         val columnAllocations = allocateNumbersAcrossColumns(previouslyAllocatedNumbers)
@@ -64,7 +65,7 @@ class ColumnRandomValueGeneratorService {
      * @param previouslyAllocatedNumbers Map of column indices to their allocated numbers.
      * @return List of numbers to allocate per column.
      */
-    private fun allocateNumbersAcrossColumns(previouslyAllocatedNumbers: Map<Int, Set<Int>>): List<Int> {
+    private fun allocateNumbersAcrossColumns(previouslyAllocatedNumbers: AllocatedNumbers): List<Int> {
         val columnCount = TicketColumnEnum.entries.size
         val isLastTicketGeneration = isLastIteration(previouslyAllocatedNumbers)
 
@@ -95,10 +96,11 @@ class ColumnRandomValueGeneratorService {
      * Allocates numbers specifically for the last ticket, ensuring fair distribution
      * while adhering to constraints.
      */
-    private fun allocateForLastTicket(previouslyAllocatedNumbers: Map<Int, Set<Int>>): List<Int> {
+    private fun allocateForLastTicket(previouslyAllocatedNumbers: AllocatedNumbers): List<Int> {
         val remainingNumbersToAllocate = TOTAL_NUMBERS_TO_GENERATE
         val remainingAvailableNumbersPerColumn = TicketColumnEnum.entries.mapIndexed { index, column ->
-            column.valuesRange.count() - (previouslyAllocatedNumbers[index]?.size ?: 0)
+            val alreadyAllocatedCount = previouslyAllocatedNumbers.getAllocatedCountForColumn(index)
+            column.valuesRange.count() - alreadyAllocatedCount
         }
 
         return remainingAvailableNumbersPerColumn.map { availableNumbers ->
@@ -141,11 +143,11 @@ class ColumnRandomValueGeneratorService {
      */
     private fun initializeColumnAllocations(
         columnCount: Int,
-        previouslyAllocatedNumbers: Map<Int, Set<Int>>
+        previouslyAllocatedNumbers: AllocatedNumbers
     ): MutableList<Int> {
         return MutableList(columnCount) { columnIndex ->
             val columnRange = TicketColumnEnum.entries[columnIndex].valuesRange
-            val totalPreviouslyAllocatedNumbers = previouslyAllocatedNumbers[columnIndex]?.size ?: 0
+            val totalPreviouslyAllocatedNumbers = previouslyAllocatedNumbers.getAllocatedCountForColumn(columnIndex)
             val remainingAvailableNumbers = columnRange.count() - totalPreviouslyAllocatedNumbers
 
             if (remainingAvailableNumbers <= 0) {
@@ -162,8 +164,8 @@ class ColumnRandomValueGeneratorService {
      * @param previouslyAllocatedNumbers Map of column indices to their allocated numbers.
      * @return True if this is the last ticket to be generated, false otherwise.
      */
-    private fun isLastIteration(previouslyAllocatedNumbers: Map<Int, Set<Int>>): Boolean {
-        val totalAllocatedNumbers = previouslyAllocatedNumbers.values.sumOf { it.size }
+    private fun isLastIteration(previouslyAllocatedNumbers: AllocatedNumbers): Boolean {
+        val totalAllocatedNumbers = previouslyAllocatedNumbers.getTotalAllocatedNumbers()
         return (TOTAL_TICKET_NUMBERS - totalAllocatedNumbers) <= TOTAL_NUMBERS_TO_GENERATE
     }
 
@@ -184,11 +186,11 @@ class ColumnRandomValueGeneratorService {
      */
     private fun getAvailableForAllocationColumnNumbers(
         columnRange: IntRange,
-        previouslyAllocatedNumbers: Map<Int, Set<Int>>,
+        previouslyAllocatedNumbers: AllocatedNumbers,
         columnIndex: Int
-    ): List<Int> {
-        return columnRange.filterNot { previouslyAllocatedNumbers[columnIndex]?.contains(it) == true }
-    }
+    ): List<Int> = columnRange.filterNot { number ->
+            previouslyAllocatedNumbers.isNumberAlreadyAllocated(columnIndex, number)
+        }
 
     /**
      * Randomly selects the specified number of values from the available numbers for a column.
