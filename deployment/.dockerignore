@@ -10,6 +10,7 @@ out/
 gradle/
 gradle-wrapper.jar
 gradle-wrapper.properties
+!gradle/wrapper/gradle-wrapper.properties
 
 # Ignore local environment files
 *.env
