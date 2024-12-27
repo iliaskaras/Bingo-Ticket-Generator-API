@@ -10,5 +10,6 @@ data class TicketColumns(
 
 data class ColumnAllocationTracker(
     val allocations: IntArray = IntArray(9) { 0 },
-    val remainingNumbers: Array<MutableList<Int>>
+    val remainingNumbers: List<MutableList<Int>>,
+    val skipAllocation: MutableList<Int>
 )

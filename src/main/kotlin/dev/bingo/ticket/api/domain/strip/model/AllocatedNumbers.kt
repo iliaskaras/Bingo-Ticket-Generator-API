@@ -1,5 +1,7 @@
 package dev.bingo.ticket.api.domain.strip.model
 
+import dev.bingo.ticket.api.domain.ticket.model.TicketColumnEnum
+
 /**
  * Represents the allocation of numbers for a single column in a Bingo ticket.
  *
@@ -76,5 +78,20 @@ data class AllocatedNumbers(
      */
     fun isNumberAlreadyAllocated(columnIndex: Int, number: Int): Boolean {
         return columnNumbers.getOrNull(columnIndex)?.allocatedNumbers?.contains(number) == true
+    }
+
+    /**
+     * Retrieves the column indexes that are fully allocated.
+     *
+     * A column is considered fully allocated if all numbers in its range,
+     * as defined in [TicketColumnEnum], are present in its allocated numbers.
+     *
+     * @return A list of column indexes that are fully allocated.
+     */
+    fun getFullyAllocatedColumns(): List<Int> {
+        return columnNumbers.filter { column ->
+            val expectedRange = TicketColumnEnum.getByIndex(column.columnIndex).valuesRange
+            column.allocatedNumbers.containsAll(expectedRange.toList())
+        }.map { it.columnIndex }
     }
 }

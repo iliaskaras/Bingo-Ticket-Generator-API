@@ -194,18 +194,41 @@ class ColumnRandomValueGeneratorServiceSpec extends Specification {
 
         then: "An IllegalStateException is thrown due to insufficient numbers in column 8"
             def exception = thrown(IllegalStateException)
-            exception.message == "No available columns left to allocate numbers."
+            exception.message == "No valid columns left for allocation."
     }
 
     def "should throw IllegalArgumentException when invalid column index is used for allocation"() {
         given: "A ColumnAllocationTracker with mock data"
             def allocations = new int[9]
-            def remainingNumbers = (0..8).collect { [1, 2, 3] as ArrayList } as ArrayList[]
-            def ticketColumns = (0..8).collect { [] as ArrayList }
+            def remainingNumbers = (0..8).collect { [1, 2, 3] as ArrayList }
+            def ticketColumns = (0..8).collect { [] as List }
 
             def columnAllocationTracker = new ColumnAllocationTracker(
                 allocations,
-                remainingNumbers
+                remainingNumbers,
+                List.of()
+            )
+
+        when: "Trying to allocate a number to an invalid column index"
+            columnRandomValueGeneratorService.allocateNumberToColumn(
+                columnAllocationTracker, 9, ticketColumns
+            )
+
+        then: "An IllegalArgumentException is thrown"
+            def exception = thrown(IllegalArgumentException)
+            exception.message.contains("Invalid column index")
+    }
+
+    def "should throw IllegalArgumentException when invalid column index is used for allocation"() {
+        given: "A ColumnAllocationTracker with mock data"
+            def allocations = new int[9]
+            def remainingNumbers = (0..8).collect { [1, 2, 3] as ArrayList }
+            def ticketColumns = (0..8).collect { [] as List }
+
+            def columnAllocationTracker = new ColumnAllocationTracker(
+                    allocations,
+                    remainingNumbers,
+                    List.of()
             )
 
         when: "Trying to allocate a number to an invalid column index"
@@ -215,45 +238,49 @@ class ColumnRandomValueGeneratorServiceSpec extends Specification {
 
         then: "An IllegalArgumentException is thrown"
             def exception = thrown(IllegalArgumentException)
-            exception.message.contains("Invalid column index")
+            exception.message == "Invalid column index: 9. Must be between 0 and 8."
     }
 
-    def "should throw IllegalStateException when attempting to allocate from a column without any remaining numbers"() {
-        given: "A ColumnAllocationTracker with an empty column"
+    def "should throw IllegalStateException when there are no valid columns left for allocation"() {
+        given: "A ColumnAllocationTracker with fully allocated columns"
             def allocations = new int[9]
-            def remainingNumbers = (0..8).collect { [] as ArrayList } as ArrayList[]
-            def ticketColumns = (0..8).collect { [] as ArrayList }
+            def remainingNumbers = (0..8).collect { [] as ArrayList }  // No remaining numbers
 
             def columnAllocationTracker = new ColumnAllocationTracker(
-                allocations,
-                remainingNumbers
+                    allocations,
+                    remainingNumbers,
+                    List.of()
             )
 
-        when: "Trying to allocate a number that its column have no remaining numbers"
-            columnRandomValueGeneratorService.allocateNumberToColumn(
-                columnAllocationTracker, 0, ticketColumns
+        when: "Trying to select a column for allocation"
+            columnRandomValueGeneratorService.selectUnderpopulatedColumn(
+                    columnAllocationTracker, 5
             )
 
-        then: "An IllegalStateException is thrown"
+        then: "An IllegalStateException is thrown due to no available columns"
             def exception = thrown(IllegalStateException)
-            exception.message.contains("No remaining numbers in column 0 to allocate.")
+            exception.message == "No valid columns left for allocation."
     }
 
-    def "should throw IllegalStateException when there are no available columns with remaining numbers"() {
-        given: "A ColumnAllocationTracker with all allocations assigned"
-            def allocations = new int[9].collect { ColumnRandomValueGeneratorService.MAX_VALUES_PER_COLUMN } as int[]
-            def remainingNumbers = (0..8).collect { [] as ArrayList } as ArrayList[]
+    def "should throw IllegalStateException when there are no remaining numbers for allocation in a column"() {
+        given: "A ColumnAllocationTracker where column 0 is out of available numbers"
+            def allocations = new int[9]
+            def remainingNumbers = (0..8).collect { [] as ArrayList }  // Column 0 has no numbers left
+            def ticketColumns = (0..8).collect { [] as List }
 
             def columnAllocationTracker = new ColumnAllocationTracker(
-                allocations,
-                remainingNumbers
+                    allocations,
+                    remainingNumbers,
+                    List.of()
             )
 
-        when: "Trying to select a column when all columns are fully allocated"
-            columnRandomValueGeneratorService.selectColumn(columnAllocationTracker, columnAllocationTracker.remainingNumbers)
+        when: "Trying to allocate a number to column 0 which has no numbers left"
+            columnRandomValueGeneratorService.allocateNumberToColumn(
+                    columnAllocationTracker, 0, ticketColumns
+            )
 
         then: "An IllegalStateException is thrown"
             def exception = thrown(IllegalStateException)
-            exception.message.contains("No available columns left to allocate numbers.")
+            exception.message == "No remaining numbers or column 0 is fully allocated."
     }
 }
