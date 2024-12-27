@@ -3,6 +3,25 @@
 ## Overview
 The **Bingo Ticket Generator API** is a RESTful service designed to generate Bingo strips. Each strip consists of six Bingo tickets, adhering to traditional Bingo rules. The project follows **Hexagonal Architecture** and **Domain-Driven Design (DDD)** to ensure maintainability, scalability, and testability.
 
+## Bingo Strips creation speed report
+
+### Method Performance Results
+
+The following results taken by running the **StripGeneratorStressSpec**'s test scenarios.
+Note: Production code also logs the generated strips, which causing delay on the speed. For the purpose of the speed test, the logging was removed from the **StripGeneratorService**.
+
+| Strip generation | Number of Strips Generated | Speed (ms) |
+|------------------|----------------------------|------------|
+|                  | 1                          | 8          |
+|                  | 1000                       | 613        |
+|                  | 2000                       | 815        |
+|                  | 4000                       | 1161       |
+|                  | 8000                       | 1716       |
+|                  | **10000**                  | 2028       |
+|                  | 20000                      | 3085       |
+|                  | 50000                      | 6608       |
+|                  | 100000                     | 13639      |
+
 ## Features
 - **Strip Generation**: Generate strips containing six Bingo tickets through a REST endpoint.
 - **Validation**: Implements all Bingo-specific validation rules for ticket generation.

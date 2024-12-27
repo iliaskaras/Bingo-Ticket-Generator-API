@@ -30,7 +30,7 @@ class StripGeneratorStressSpec extends StressTestSpecification {
 
         when: "The StripGeneratorService generates strips"
             (1..numberOfStrips).each {
-                def strip = stripGeneratorService.generateStrip()
+                def strip = stripGeneratorService.generateStrip(false)
                 generatedStrips.add(strip)
             }
 
@@ -39,15 +39,15 @@ class StripGeneratorStressSpec extends StressTestSpecification {
             println "Successfully generated $numberOfStrips strips!"
     }
 
-    @Timeout(value = 3, unit = TimeUnit.SECONDS)
-    def "should generate 10k strips without error under 3 seconds"() {
+    @Timeout(value = 2500, unit = TimeUnit.MILLISECONDS)
+    def "should generate 10k strips without error under 2.5 seconds"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 10000
             def generatedStrips = []
 
         when: "The StripGeneratorService generates strips"
             (1..numberOfStrips).each {
-                def strip = stripGeneratorService.generateStrip()
+                def strip = stripGeneratorService.generateStrip(false)
                 generatedStrips.add(strip)
             }
 
@@ -56,15 +56,15 @@ class StripGeneratorStressSpec extends StressTestSpecification {
             println "Successfully generated $numberOfStrips strips!"
     }
 
-    @Timeout(value = 25, unit = TimeUnit.SECONDS)
-    def "should generate 100k strips without error under 25 seconds"() {
+    @Timeout(value = 15, unit = TimeUnit.SECONDS)
+    def "should generate 100k strips without error under 15 seconds"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 100000
             def generatedStrips = []
 
         when: "The StripGeneratorService generates strips"
             (1..numberOfStrips).each {
-                def strip = stripGeneratorService.generateStrip()
+                def strip = stripGeneratorService.generateStrip(false)
                 generatedStrips.add(strip)
             }
 
@@ -76,7 +76,7 @@ class StripGeneratorStressSpec extends StressTestSpecification {
     @Timeout(value = 15, unit = TimeUnit.MILLISECONDS)
     def "should generate 1 strip without error under 0.15 seconds"() {
         when: "The StripGeneratorService generates strip"
-            stripGeneratorService.generateStrip()
+            stripGeneratorService.generateStrip(false)
 
         then: "No exception occurs during generation"
             println "Successfully generated 1 strip"

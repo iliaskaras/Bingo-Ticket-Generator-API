@@ -275,7 +275,7 @@ class StripGeneratorServiceSpec extends Specification {
             }
 
         when: "We generate a strip of 6 tickets"
-            def strip = stripGeneratorService.generateStrip()
+            def strip = stripGeneratorService.generateStrip(false)
 
         then: "We expect 6 tickets to be generated"
             strip.tickets.size() == 6

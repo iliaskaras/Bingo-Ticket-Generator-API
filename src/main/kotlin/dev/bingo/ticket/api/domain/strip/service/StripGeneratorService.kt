@@ -20,7 +20,7 @@ class StripGeneratorService(
      *
      * @return A list of 6 TicketRow objects, each representing a Bingo ticket.
      */
-    fun generateStrip(): Strip {
+    fun generateStrip(logStrip: Boolean = true): Strip {
         val tickets = mutableListOf<Ticket>()
         var previouslyAllocatedNumbers = AllocatedNumbers()
 
@@ -33,7 +33,7 @@ class StripGeneratorService(
 
         val strip = Strip(tickets.toList())
 
-        logStrip(strip)
+        if (logStrip) logStrip(strip)
 
         return strip
     }
