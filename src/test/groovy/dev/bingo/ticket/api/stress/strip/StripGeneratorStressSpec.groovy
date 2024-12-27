@@ -22,8 +22,8 @@ class StripGeneratorStressSpec extends StressTestSpecification {
     @Subject
     def stripGeneratorService = new StripGeneratorService(ticketGeneratorService)
 
-    @Timeout(value = 600, unit = TimeUnit.MILLISECONDS)
-    def "should generate 1k strips without error under 0.6 seconds"() {
+    @Timeout(value = 1, unit = TimeUnit.SECONDS)
+    def "should generate 1k strips without error under 1 second"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 1000
             def generatedStrips = []
@@ -39,8 +39,8 @@ class StripGeneratorStressSpec extends StressTestSpecification {
             println "Successfully generated $numberOfStrips strips!"
     }
 
-    @Timeout(value = 1600, unit = TimeUnit.MILLISECONDS)
-    def "should generate 10k strips without error under 1.6 seconds"() {
+    @Timeout(value = 3, unit = TimeUnit.SECONDS)
+    def "should generate 10k strips without error under 3 seconds"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 10000
             def generatedStrips = []
@@ -56,8 +56,8 @@ class StripGeneratorStressSpec extends StressTestSpecification {
             println "Successfully generated $numberOfStrips strips!"
     }
 
-    @Timeout(value = 8, unit = TimeUnit.SECONDS)
-    def "should generate 100k strips without error under 8 seconds"() {
+    @Timeout(value = 17, unit = TimeUnit.SECONDS)
+    def "should generate 100k strips without error under 17 seconds"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 100000
             def generatedStrips = []

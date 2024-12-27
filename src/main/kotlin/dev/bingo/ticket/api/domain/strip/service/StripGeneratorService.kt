@@ -5,12 +5,15 @@ import dev.bingo.ticket.api.domain.strip.model.Strip
 import dev.bingo.ticket.api.domain.ticket.model.Ticket
 import dev.bingo.ticket.api.domain.ticket.model.TicketRowCell
 import dev.bingo.ticket.api.domain.ticket.service.TicketGeneratorService
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
 class StripGeneratorService(
     private val ticketGeneratorService: TicketGeneratorService
 ) {
+
+    private val logger = LoggerFactory.getLogger(StripGeneratorService::class.java)
 
     /**
      * Generates a strip of 6 Bingo tickets, ensuring that the previously allocated numbers are passed to each new ticket.
@@ -28,17 +31,11 @@ class StripGeneratorService(
             previouslyAllocatedNumbers = updatePreviouslyAllocatedNumbers(previouslyAllocatedNumbers, ticket)
         }
 
-        return Strip(tickets.toList())
-    }
+        val strip = Strip(tickets.toList())
 
-    /**
-     * Initializes the previously allocated numbers, which is a map of column index to sets of numbers.
-     * This would represent the initial state before generating any tickets.
-     *
-     * @return A map of previously allocated numbers by column index.
-     */
-    private fun initializePreviouslyAllocatedNumbers(): Map<Int, Set<Int>> {
-        return (0..8).associateWith { mutableSetOf() }
+        logStrip(strip)
+
+        return strip
     }
 
     /**
@@ -61,5 +58,56 @@ class StripGeneratorService(
         }
 
         return previouslyAllocatedNumbers
+    }
+
+
+    /**
+     * Logs the generated strip in a human-readable "best bingo" format for debugging and review purposes.
+     *
+     * The format includes each ticket, its rows, and the cell values:
+     * - Numbers are right-aligned and padded for clarity.
+     * - Blank cells are represented as "XX".
+     *
+     * Example:
+     * ```
+     * Generated Strip:
+     * Ticket 1:
+     * Row 1:  12  XX  34  45  XX
+     * Row 2:  XX  11  XX  XX  50
+     * Row 3:  XX  XX  25  XX  XX
+     *
+     * Ticket 2:
+     * Row 1:  ...
+     * ```
+     *
+     * @param strip The Strip object containing the tickets to be logged.
+     */
+    private fun logStrip(strip: Strip) {
+        val stripString = buildString {
+            appendLine("Generated Strip:")
+
+            strip.tickets.forEachIndexed { ticketIndex, ticket ->
+                appendLine("Ticket ${ticketIndex + 1}:")
+
+                ticket.rows.forEachIndexed { rowIndex, row ->
+                    append("Row ${rowIndex + 1}: ")
+
+                    row.cells.forEach { cell ->
+                        append(
+                            when (cell) {
+                                is TicketRowCell.NumberRowCell -> cell.number.toString().padStart(2, ' ') + "  "
+                                TicketRowCell.BlankRowCell -> "XX  "
+                            }
+                        )
+                    }
+
+                    appendLine()
+                }
+
+                appendLine()
+            }
+        }
+
+        logger.info(stripString)
     }
 }
