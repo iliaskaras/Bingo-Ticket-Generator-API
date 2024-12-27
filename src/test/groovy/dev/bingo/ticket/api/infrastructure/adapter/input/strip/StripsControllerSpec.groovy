@@ -79,7 +79,7 @@ class StripsControllerSpec extends Specification {
         given:
             def requestBody = """
                 {
-                    "number": 50001
+                    "number": 10001
                 }
                 """
 
@@ -96,8 +96,8 @@ class StripsControllerSpec extends Specification {
             def responseContent = result.response.contentAsString
             responseContent.contains('"error":"Validation failed"')
             responseContent.contains('"field":"number"')
-            responseContent.contains('"rejectedValue":50001')
-            responseContent.contains('"message":"Number of strips cannot exceed 50,000."')
+            responseContent.contains('"rejectedValue":10001')
+            responseContent.contains('"message":"Number of strips cannot exceed 10,000."')
     }
 
     def "createStrips should return 400 when number is missing"() {
