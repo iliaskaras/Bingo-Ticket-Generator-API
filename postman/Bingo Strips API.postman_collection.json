@@ -1,0 +1,47 @@
+{
+	"info": {
+		"_postman_id": "5da4d898-f1a6-476e-b60c-948fa4acd033",
+		"name": "Bingo Strips API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14837722"
+	},
+	"item": [
+		{
+			"name": "Strips",
+			"item": [
+				{
+					"name": "Generate Strips",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"number\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "127.0.0.1:8080/api/v1/strips",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"strips"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
