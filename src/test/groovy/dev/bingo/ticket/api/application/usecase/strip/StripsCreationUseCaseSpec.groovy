@@ -54,7 +54,7 @@ class StripsCreationUseCaseSpec extends Specification {
             def result = stripsCreationUseCase.execute(number)
 
         then:
-            number * stripGeneratorService.generateStrip() >>> [strip1, strip2]
+            number * stripGeneratorService.generateStrip(true) >>> [strip1, strip2]
             1 * stripToDtoConverter.invoke(strip1) >> stripDto1
             1 * stripToDtoConverter.invoke(strip2) >> stripDto2
 
@@ -73,7 +73,7 @@ class StripsCreationUseCaseSpec extends Specification {
             stripsCreationUseCase.execute(1)
 
         then:
-            1 * stripGeneratorService.generateStrip() >>> [strip]
+            1 * stripGeneratorService.generateStrip(true) >>> [strip]
             def exception = thrown(IllegalArgumentException)
             exception.message == "The number of strip's tickets must be 6."
     }
