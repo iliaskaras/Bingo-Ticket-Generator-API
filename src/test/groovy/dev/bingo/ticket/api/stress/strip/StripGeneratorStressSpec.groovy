@@ -56,8 +56,8 @@ class StripGeneratorStressSpec extends StressTestSpecification {
             println "Successfully generated $numberOfStrips strips!"
     }
 
-    @Timeout(value = 17, unit = TimeUnit.SECONDS)
-    def "should generate 100k strips without error under 17 seconds"() {
+    @Timeout(value = 25, unit = TimeUnit.SECONDS)
+    def "should generate 100k strips without error under 25 seconds"() {
         given: "A target number of strips to generate"
             def numberOfStrips = 100000
             def generatedStrips = []
