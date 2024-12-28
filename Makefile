@@ -7,6 +7,8 @@ all: help
 # Deployment of the application (build Docker images and start services using Docker Compose)
 .PHONY: deploy
 deploy:
+	@echo "Building the application..."
+	./gradlew build -x test --parallel
 	@echo "Building and deploying the application using Docker Compose..."
 	sudo docker-compose -f deployment/docker-compose.yml up --build
 
