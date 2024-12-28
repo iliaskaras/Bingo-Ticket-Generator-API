@@ -8,6 +8,11 @@ COPY ../gradle ./gradle
 COPY ../build.gradle.kts .
 COPY ../settings.gradle.kts .
 
+# Install dos2unix (only once)
+RUN apt-get update && apt-get install -y dos2unix
+
+RUN dos2unix ./gradlew
+
 RUN ./gradlew --no-daemon dependencies
 
 COPY ../src ./src
