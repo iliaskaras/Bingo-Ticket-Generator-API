@@ -83,6 +83,7 @@ The application is fully containerized and can be deployed locally using Docker 
 ### Prerequisites
 - Docker
 - Docker Compose
+- JDK 19
 
 ### Deployment Steps
 1. Clone the repository:
